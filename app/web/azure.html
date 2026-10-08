@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>晓辰 · 文字转语音</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f4ef;color:#252c31;font:16px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}main{max-width:760px;margin:55px auto;padding:32px;background:white;border-radius:20px;box-shadow:0 10px 40px #2030200a}h1{margin:0;font-size:30px}p{color:#67716e}label{display:block;margin:18px 0 6px}input,textarea{width:100%;font:inherit;border:1px solid #cdd4cd;border-radius:9px;padding:11px;background:#fcfcfa}textarea{height:235px;resize:vertical}input[type=checkbox]{width:auto;accent-color:#28735d}button,.download{background:#28735d;color:white;border:0;padding:12px 22px;border-radius:10px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block}button:disabled{opacity:.5;cursor:wait}small{color:#67716e}.row{display:flex;gap:18px}.row>div{flex:1}audio{width:100%;margin:20px 0}#status{min-height:30px;margin:14px 0;white-space:pre-wrap}.download{background:#eef4ef;color:#28735d}details{margin-top:22px}summary{cursor:pointer;color:#67716e}@media(max-width:600px){main{margin:15px;padding:22px}.row{display:block}}
+
+.panel{border:1px solid #e1e7e0;border-radius:16px;padding:22px;margin-top:26px;background:#fcfdfb}.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.section-head h2{font-size:20px;margin:0}.section-note{margin:6px 0 16px;font-size:14px}.quiet{background:transparent;color:#67716e;border:1px solid #dce3dc;padding:7px 13px;font-size:14px}.actions{display:flex;gap:10px;flex-wrap:wrap}.actions button,.actions a{padding:9px 15px;font-size:14px}.badge{display:inline-block;border-radius:6px;background:#edf3ee;color:#28735d;padding:2px 8px;font-size:12px}.history-tools{display:flex;gap:10px;align-items:center;margin:16px 0}.history-tools input{flex:1;min-width:0;font-size:14px}.history-tools select{max-width:145px;padding:10px;border:1px solid #cdd4cd;border-radius:9px;background:white;color:#46564c;font:inherit;font-size:14px}.history-card{padding:18px;background:white;border:1px solid #e1e7e0;border-radius:12px;margin:12px 0}.history-card.selected{border-color:#28735d;background:#f6faf6}.history-title{font-size:16px;font-weight:600;line-height:1.65;overflow-wrap:anywhere;margin:10px 0 5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.history-meta{font-size:13px;color:#788279;margin-bottom:14px}.empty{padding:30px 12px;text-align:center;color:#778278;font-size:14px}.result-title{margin:12px 0 0;overflow-wrap:anywhere;color:#46564c;font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}#history-more{display:block;margin:16px auto 0}#history-more[hidden]{display:none}#status{padding:12px 15px;border-radius:10px;background:#f5f7f3;font-size:14px}button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #93b7a6;outline-offset:3px}@media(max-width:600px){.panel{padding:16px}.history-tools{flex-wrap:wrap}.history-tools input{flex-basis:100%}.history-tools select{max-width:none;width:100%}.actions{gap:8px}.actions button,.actions a{padding:9px 12px}}
+</style>
+<main>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h1>晓辰 · 文字转语音</h1><button id="settings-open" type="button" class="download">设置</button></div>
+<p>粘贴文案，选择生成纯朗读或带背景音乐的 MP3。</p>
+<form id="form">
+<label for="text">要朗读的文字</label><textarea id="text" maxlength="100000" placeholder="在这里写下你想让晓辰朗读的内容……" required></textarea>
+<p style="background:#eef4ef;padding:12px;border-radius:10px;color:#28735d">晓辰 · 1.5 倍速 · 保持音调<br>可选背景音乐：寂寞的人伤心的歌（你提供的版本）<br>选择加音乐时，音乐低音量、原速循环到朗读结束。长文自动按句子分段。</p>
+<small id="count">0 / 100000 字</small><p style="display:flex;gap:12px;flex-wrap:wrap"><button id="generate" type="submit" value="voice">只生成朗读</button><button id="generate-music" type="submit" value="music">生成朗读＋背景音乐</button></p>
+</form>
+<div id="status" role="status" aria-live="polite">正在读取设置……</div>
+<section id="result" class="panel" hidden aria-labelledby="result-heading"><div class="section-head"><h2 id="result-heading">当前音频</h2><button id="result-close" class="quiet" type="button" aria-label="收起当前音频">收起</button></div><p id="result-title" class="result-title"></p><p style="margin:10px 0 0"><span id="result-mode" class="badge"></span> <small>1.5 倍速 · 保持音调</small></p><audio id="audio" controls preload="metadata"></audio><div class="actions"><a id="download" class="download" download="晓辰朗读.mp3">下载 MP3</a><button id="result-reveal" class="quiet" type="button">在文件夹中打开</button></div></section>
+<section class="panel" aria-labelledby="history-heading"><div class="section-head"><h2 id="history-heading">生成历史 <small id="history-count"></small></h2><button id="history-refresh" class="quiet" type="button">刷新</button></div><p class="section-note">按时间从新到旧排列，随时播放或下载。</p><div class="history-tools"><input id="history-search" type="search" aria-label="搜索历史文案" placeholder="搜索历史文案……"><select id="history-filter" aria-label="筛选音频类型"><option value="all">全部音频</option><option value="voice">纯朗读</option><option value="music">含背景音乐</option></select></div><div id="history" aria-live="polite">正在读取历史……</div><button id="history-more" class="quiet" type="button" hidden>显示更多</button></section>
+<dialog id="settings" style="border:0;border-radius:16px;padding:28px;max-width:480px;width:90%;box-shadow:0 20px 80px #0003">
+<form id="settings-form"><h2 style="margin-top:0">语音设置</h2>
+<label for="key">Speech 密钥</label><input id="key" type="password" autocomplete="off" placeholder="粘贴 KEY 1 或 KEY 2"><small id="key-note">密钥保存到本机 macOS 钥匙串。</small>
+<label for="region">资源区域</label><input id="region" value="eastus" required spellcheck="false"><small>默认 eastus，与 Azure 的 Location/Region 一致。</small>
+<label for="concurrency">并发生成数量</label><input id="concurrency" type="number" min="1" max="8" step="1" value="4" required><small>默认 4，设为 1 则逐段生成。F0 请求仍至少间隔 3.2 秒；保存后用于新任务。</small>
+<p>密钥保存后会自动使用，不会显示在页面中。首次使用时，macOS 可能要求允许访问钥匙串。</p>
+<div id="settings-status" role="status"></div><p style="display:flex;gap:12px"><button id="save" type="submit">保存设置</button><button id="settings-close" class="download" type="button">关闭</button></p>
+</form></dialog>
+</main>
+<script>
+const $=id=>document.getElementById(id);let resultId;let historyEntries=[],historyLimit=8;
+async function loadSettings(){try{const response=await fetch('/api/settings');const data=await response.json();if(!response.ok)throw Error(data.error);$('region').value=data.region;$('concurrency').value=data.concurrency;$('key-note').textContent=data.configured?'已保存到钥匙串。留空保留原密钥，填写可替换。':'密钥保存到本机 macOS 钥匙串。';$('status').textContent=data.configured?'已配置晓辰，可以选择生成纯朗读或带背景音乐的朗读。':'请点击右上角设置，保存 Speech 密钥。'}catch(error){$('status').textContent=error.message}}
+$('settings-open').onclick=()=>{$('settings-status').textContent='';$('settings').showModal()};
+$('settings-close').onclick=()=>{$('key').value='';$('settings').close()};
+$('settings').addEventListener('close',()=>{$('key').value=''});
+$('settings-form').onsubmit=async event=>{event.preventDefault();$('save').disabled=true;try{const response=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:$('key').value,region:$('region').value,concurrency:Number($('concurrency').value)})});const data=await response.json();if(!response.ok)throw Error(data.error);$('key').value='';$('settings').close();await loadSettings()}catch(error){$('settings-status').textContent=error.message}finally{$('save').disabled=false}};
+loadSettings().then(()=>{const pending=localStorage.getItem('xiaochen-job');if(pending&&/^[a-f0-9]{64}$/.test(pending))followJob(pending);});
+$('text').value=localStorage.getItem('xiaochen-draft')||'';
+function updateCount(){$('count').textContent=`${Array.from($('text').value).length} / 100000 字`;}
+updateCount();
+$('text').addEventListener('input',()=>{updateCount();localStorage.setItem('xiaochen-draft',$('text').value)});
+let activeJob;
+function setGenerating(busy){$('generate').disabled=busy;$('generate-music').disabled=busy;}
+function showResult(id,withMusic){resultId=id;$('audio').pause();const url=`/api/narrations/${id}/audio`;$('audio').src=url;$('download').href=url;$('download').download=withMusic?'晓辰1.5倍速与背景音乐.mp3':'晓辰1.5倍速朗读.mp3';$('result-mode').textContent=withMusic?'含背景音乐':'纯朗读';$('result-title').textContent=historyEntries.find(entry=>entry.id===id)?.preview||$('text').value.slice(0,100)||'晓辰朗读';$('result').hidden=false;renderHistory();}
+$('result-close').onclick=()=>{$('audio').pause();$('audio').removeAttribute('src');$('audio').load();$('result').hidden=true;resultId=null;renderHistory();};
+async function reveal(id){try{const response=await fetch('/api/reveal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});const data=await response.json();if(!response.ok)throw Error(data.error);}catch(error){$('status').textContent=error.message;}}
+$('result-reveal').onclick=()=>{if(resultId)reveal(resultId);};
+function renderHistory(){
+ const query=$('history-search').value.trim().toLocaleLowerCase(),filter=$('history-filter').value;
+ const entries=historyEntries.filter(entry=>entry.preview.toLocaleLowerCase().includes(query)&&(filter==='all'||entry.with_music===(filter==='music')));
+ $('history-count').textContent=`${historyEntries.length} 条`;$('history').replaceChildren();$('history-more').hidden=entries.length<=historyLimit;
+ if(!entries.length){const empty=document.createElement('div');empty.className='empty';empty.textContent=historyEntries.length?'没有匹配的音频，试试其他关键词或类型。':'还没有音频。生成后，你的朗读会出现在这里。';$('history').append(empty);return;}
+ for(const entry of entries.slice(0,historyLimit)){
+  const item=document.createElement('article');item.className='history-card'+(entry.id===resultId?' selected':'');
+  const badge=document.createElement('span');badge.className='badge';badge.textContent=(entry.with_music?'含背景音乐':'纯朗读')+(entry.id===resultId?' · 当前音频':'');
+  const title=document.createElement('div');title.className='history-title';title.textContent=entry.preview;title.title=entry.preview;
+  const info=document.createElement('div');info.className='history-meta';info.textContent=new Date(entry.created*1000).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+(entry.bytes/1024/1024).toFixed(1)+' MB · 1.5 倍速';
+  const actions=document.createElement('div');actions.className='actions';
+  const view=document.createElement('button');view.type='button';view.textContent=entry.id===resultId?'正在查看':'播放';view.onclick=()=>{showResult(entry.id,entry.with_music);$('audio').play().catch(()=>{$('status').textContent='音频已打开，点击播放器即可播放。';});$('result').scrollIntoView({behavior:'smooth',block:'center'});};
+  const download=document.createElement('a');download.className='download';download.textContent='下载 MP3';download.href=`/api/narrations/${entry.id}/audio`;download.download=entry.with_music?'晓辰1.5倍速与背景音乐.mp3':'晓辰1.5倍速朗读.mp3';
+  const folder=document.createElement('button');folder.type='button';folder.className='quiet';folder.textContent='打开文件夹';folder.onclick=()=>reveal(entry.id);
+  actions.append(view,download,folder);item.append(badge,title,info,actions);$('history').append(item);
+ }
+}
+async function loadHistory(){const button=$('history-refresh');button.disabled=true;try{const response=await fetch('/api/history');const entries=await response.json();if(!response.ok)throw Error(entries.error);historyEntries=entries;renderHistory();}catch(error){$('history').textContent=error.message||'读取历史失败，请点击刷新重试。';}finally{button.disabled=false;}}
+$('history-refresh').onclick=loadHistory;
+$('history-search').oninput=$('history-filter').onchange=()=>{historyLimit=8;renderHistory();};
+$('history-more').onclick=()=>{historyLimit+=8;renderHistory();};
+loadHistory();
+async function followJob(id){activeJob=id;setGenerating(true);$('result').hidden=true;
+try{while(activeJob===id){const response=await fetch(`/api/narrations/${id}`);const job=await response.json();if(!response.ok){localStorage.removeItem('xiaochen-job');throw Error(job.error);}$('status').textContent=job.message;if(job.state==='done'){showResult(id,job.with_music);loadHistory();localStorage.removeItem('xiaochen-job');break}if(job.state==='error'){localStorage.removeItem('xiaochen-job');throw Error(job.message);}await new Promise(resolve=>setTimeout(resolve,1500));}}
+catch(error){$('status').textContent=error.message||'读取进度失败。可刷新页面恢复进度，或点击生成继续。';}
+finally{setGenerating(false);activeJob=null;}}
+$('form').addEventListener('submit',async event=>{event.preventDefault();setGenerating(true);$('audio').pause();$('status').textContent='正在提交文案……';
+try{const response=await fetch('/api/narrations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:$('text').value,with_music:event.submitter?.value==='music'})});const data=await response.json();if(!response.ok)throw Error(data.error);localStorage.setItem('xiaochen-job',data.id);await followJob(data.id)}catch(error){$('status').textContent=error.message||'生成失败，请重试。';setGenerating(false)}});
+</script>
+</html>
